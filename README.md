@@ -58,6 +58,55 @@ docker compose logs --tail=100 backend frontend
 docker compose down
 ```
 
+## Vercel multi-service deployment
+
+The root `vercel.json` defines `backend` (FastAPI, entrypoint `app.main:app`)
+and `frontend` (Vite, built with `npm ci` and `npm run build`). Import this
+repository as **one project**, using the repository root as the Vercel Root
+Directory, rather than selecting either service directory. Services configuration
+is currently pending confirmation of the service names and public exposure.
+
+Public routing is intentionally limited to `/api/*` for the backend; all remaining
+paths go to the frontend. Service routing preserves the original request path,
+so FastAPI continues to receive `/api/forecast`, `/api/meta`, and `/api/metrics/*`.
+Backend `/health`, `/docs`, and `/openapi.json` are not exposed by these Vercel
+rewrites. Their Docker URLs above still apply when running Compose.
+
+The browser already fetches the same-origin `/api` base. Leave
+`VITE_API_BASE_URL` unset for this deployment. No internal bindings are declared:
+this frontend is static and has no server-side function calling the backend.
+Binding URLs are runtime-function variables and must not be embedded into a Vite
+bundle or assigned manually. The backend's outbound calls go to external Elexon,
+not another service in this project. A private backend would require adding a
+server-side gateway function to the frontend and binding that caller to backend;
+that is a different topology from the current public API setup.
+
+The localhost proxy in `frontend/vite.config.js` serves standalone Vite development;
+the `backend:8000` hostname in Nginx serves Docker Compose. Neither is used for
+Vercel production routing, which is owned by the root rewrites. Docker configuration
+remains a separate way to run the same application.
+
+With a current Vercel CLI, test all services together from the repository root:
+
+```powershell
+npx vercel dev --local
+```
+
+`--local` selects local mode without cloud authentication. Check `/api/meta`, a forecast
+request such as `/api/forecast?delivery_date=2026-01-15`, and the dashboard on the
+URL printed by the CLI. After confirming the topology, link the project and use
+`npx vercel` for a preview deployment. Run the same checks on its public URL before
+promoting it. A deployed URL will be added to the submission links after deployment.
+Optional `ELEXON_TIMEOUT_SECONDS`, `ELEXON_PUBLICATION_LOOKBACK_DAYS`, and
+`ELEXON_CUTOFF_TIME` belong in Vercel project environment variables. No Elexon API
+key is required. This configuration uses Vercel's framework builds, not Compose
+or the Dockerfiles. Multi-chunk requests remain subject to the platform's function
+duration limits.
+
+See [Vercel Services](https://vercel.com/docs/services),
+[routing](https://vercel.com/docs/services/routing), and
+[bindings](https://vercel.com/docs/services/bindings) for the platform contract.
+
 ## Start without Docker
 
 Use Python 3.11+ and Node.js 22.12+ (or a newer supported LTS release).
@@ -88,6 +137,8 @@ On macOS/Linux, use `.venv/bin/python` in place of `.venv\Scripts\python.exe`.
 | Path | Purpose |
 | --- | --- |
 | `compose.yaml` | Builds and starts the frontend and backend; configures health ordering and ports. |
+| `vercel.json` | Multi-service Vercel framework builds and ordered public routing. |
+| `.gitignore` | Excludes generated Vercel project/runtime state. |
 | `backend/Dockerfile` | Python runtime, dependencies, non-root application user, and health check. |
 | `backend/requirements.txt` | Backend runtime and test dependencies. |
 | `backend/app/main.py` | FastAPI application, router registration, CORS, and health endpoint. |
@@ -292,6 +343,9 @@ Verification completed during development:
 
 These checks do not establish public deployment availability or constitute visual
 browser verification. Deployment and public-link access checks remain pending.
+Vercel CLI 65.3.1 local-services verification also passed: the dashboard HTML and
+React module returned 200, `/api/meta` returned 200, a live 2 January forecast
+returned 24 hourly points, and an unknown API route returned the backend's 404.
 
 ## AI assistance and third-party attribution
 
