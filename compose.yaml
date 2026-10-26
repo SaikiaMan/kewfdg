@@ -5,7 +5,13 @@ services:
       context: ./backend
     ports:
       - "8000:8000"
+    environment:
+      ELEXON_TIMEOUT_SECONDS: ${ELEXON_TIMEOUT_SECONDS:-30}
+      ELEXON_PUBLICATION_LOOKBACK_DAYS: ${ELEXON_PUBLICATION_LOOKBACK_DAYS:-7}
   frontend:
+    depends_on:
+      backend:
+        condition: service_healthy
     build:
       context: ./frontend
     ports:

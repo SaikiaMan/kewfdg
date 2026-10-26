@@ -29,7 +29,9 @@ Set `VITE_API_BASE_URL` before building to target a different API (include `/api
 
 From the project root, run `docker compose up --build`, then open
 http://localhost:8080. Nginx forwards `/api` to the backend service.
-The included parquet files are required; data is never fabricated or fetched by the UI.
+The backend fetches Elexon data on demand; Parquet files are not required.
+The frontend waits for backend health before starting. Keep Docker Desktop running,
+and leave ports 8000 and 8080 free before starting Compose.
 
 ## Features and data limits
 
@@ -39,10 +41,12 @@ The included parquet files are required; data is never fabricated or fetched by 
   errors, error histogram, retrospective safety buffer.
 - Responsive navigation, persistent light/dark theme, loading and error recovery.
 
-The API supports delivery dates 2 January–1 February 2026. Cached forecast coverage
-is partial: an allowed date can still return no eligible forecast. The initial view
-uses 2 January, which has data in the supplied cache. Missing actuals and buffers
-remain missing. Actuals are retrospective; buffer limitations appear in the UI.
+The API supports delivery dates 2 January–1 February 2026 and fetches Elexon records
+on demand. The initial view uses 2 January. An allowed date may still have no
+eligible forecast within the configured publication lookback. Missing actuals and
+buffers remain missing. Actuals are retrospective; buffer limitations appear in
+the UI. See the [main README](../README.md) for architecture, data assumptions,
+configuration, verification results, and AI-use disclosure.
 
 ## Validation
 
