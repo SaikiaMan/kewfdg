@@ -9,9 +9,7 @@ uses React and Python, with Elexon as its only generation-data source.
 
 - Repository: https://github.com/SaikiaMan/kewfdg
 - Vercel application: https://kewfdg.vercel.app/
-- Unlisted YouTube demonstration: **Pending recording and upload**
 
-The deployment and video links must be added before submitting the assignment.
 
 ## Product features
 
